@@ -1,0 +1,16 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+soeulhak = pd.read_csv('soeulhak.csv')
+soeulhak['확진일'] = pd.to_datetime(soeulhak['확진일'])
+soeulhak = soeulhak.set_index('확진일')
+pro = np.unique(soeulhak['지역'].values).tolist()
+for i in pro:
+    globals()['hak_{}'.format(i)]=soeulhak[soeulhak['지역']==i]
+    a = globals()['hak_{}'.format(i)]
+    globals()['hakweek_{}'.format(i)] = a.resample('W').count()
+plt.rcParams["figure.figsize"] = (16,6)
+plt.rcParams['font.family'] = 'NanumGothic'
+for i in pro:
+    plt.plot(globals()['hakweek_{}'.format(i)].index, globals()['hakweek_{}'.format(i)].연번, label=format(i))
+plt.legend()
