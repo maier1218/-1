@@ -1,0 +1,50 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+st_c = pd.read_csv('station_corona.csv')
+va = pd.read_csv('vaccine.csv')
+va['접종일'] = pd.to_datetime(va['접종일'])
+obj_va = va[va['접종일'].isin(pd.date_range('2021-01-01', '2021-09-30'))]
+obj_va = obj_va.set_index('접종일')
+obj_va = obj_va.resample('M').last()
+obj_va.rename(columns = {'2차접종률(%)' : '2차접종률'}, inplace = True)
+period = pd.date_range(start='2021-01-01', end='2021-03-31', freq='M') 
+period = pd.date_range(start='2021-01-01', end='2021-03-31', freq='M') 
+dfva1 = pd.DataFrame(columns=['접종일', '2차접종률'])
+for i in period:
+    dfva1 = dfva1.append(pd.DataFrame([[format(i), 0]], columns=['접종일', '2차접종률']), ignore_index=True)
+dfva1['접종일'] = pd.to_datetime(dfva1['접종일'])
+dfva1 = dfva1.set_index('접종일')
+dfva1 = dfva1.astype({'2차접종률':'float'})
+dfva = pd.concat([dfva1, obj_va])
+dfva['접종월'] = dfva.index.month + 202100
+dfva = dfva.set_index('접종월')
+sizes = dfva['2차접종률']
+df = st_c.copy()
+df = df.loc[(df['사용월'] >= 202101) & (df['사용월'] <= 202109)]
+df['이용인원'] = df.iloc[:, 3:50].sum(axis=1)
+sti = np.unique(df['호선명'].values).tolist()
+for i in sti:
+    globals()['sti_{}'.format(i)] = df[df['호선명']==i]
+    a = globals()['sti_{}'.format(i)]
+    globals()['stis_{}'.format(i)] = a.groupby("사용월").sum()
+
+plt.rcParams['font.family'] = 'NanumGothic'
+fig = plt.figure(figsize=(20,10))
+ax_1 = fig.add_subplot(111)
+wt = np.array(range(len(dfva)))
+w = 0.1
+ax_1.bar(wt, sizes)
+ax_2 = ax_1.twinx()
+for i in sti:
+    a = np.array(range(len(globals()['stis_{}'.format(i)])))
+    b = (globals()['stis_{}'.format(i)].이용인원) / 100000
+    ax_2.plot(a, b, label=format(i))
+ax_1.set_xticks(np.array(range(len(dfva))))
+ax_1.set_xticklabels(dfva.index)
+ax_1.set_yticks([i * 10 for i in range(7)])
+ax_1.set_ylabel('접종률')
+ax_2.set_ylabel('월별 이용인원(10만단위)')
+
+ax_2.legend(loc=1)
+plt.show()
